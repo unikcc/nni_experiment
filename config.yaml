@@ -15,4 +15,6 @@ trial:
   gpuNum: 1
 localConfig:
   useActiveGpu: true
-  maxTrialNumPerGpu: 2
+  maxTrialNumPerGpu: 1
+  gpuIndices: 0,1
+
