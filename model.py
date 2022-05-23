@@ -11,20 +11,14 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from .alphabet import Alphabet
 
 
 class TextCNN(nn.Module):
-    def __init__(self, config, alphabet : Alphabet):
+    def __init__(self, config):
         super(TextCNN, self).__init__()
         self.config = config
-        self.embeddings = nn.Embedding(alphabet.size(), config.emb_dim)
+        self.embeddings = nn.Embedding(len(config.word_dict), config.emb_dim)
         # self.embeddings.weight.requires_grad = False
-        if config['train_mode'] == 'static':
-            self.embeddings = self.embeddings.from_pretrained(torch.from_numpy(alphabet.pretrained_emb))
-        elif config['train_mode'] == 'fine-tuned':
-            self.embeddings.weight.data.copy_(torch.from_numpy(alphabet.pretrained_emb))
-
         filters = config['filters']
         self.cnn = nn.ModuleList([nn.Sequential(
             nn.Conv1d(1, config['output_channels'], [w, config.emb_dim]),
@@ -61,7 +55,7 @@ class TextCNN(nn.Module):
                 nn.init.constant_(module.bias_ih_l0_reverse.data, 0.0)
                 nn.init.constant_(module.bias_hh_l0_reverse.data, 0.0)
                 module.bias_hh_l0_reverse.data[hidden_size:(2 * hidden_size)] = 1.0
-        if isinstance(module, nn.Embedding) and self.config['train_mode'] == 'random':
+        if isinstance(module, nn.Embedding):
             nn.init.uniform_(module.weight, -0.1, 0.1) # 81.71
 
     def forward(self, input):

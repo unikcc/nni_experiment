@@ -12,8 +12,8 @@ import yaml
 import pickle as pkl
 import argparse
 import torch.nn as nn
-from TextCNN.util import MyDatasetLoader, Metric
-from TextCNN.model import TextCNN
+from util import MyDatasetLoader, Metric
+from model import TextCNN
 import torch
 from tqdm import tqdm
 from torch.optim import optimizer, Adam, Adadelta
@@ -70,7 +70,7 @@ class Template:
             # description = "{} score: {}, loss: {:.4f}, accuracy: {:4f}".format(mode.title(), epoch, *self.metircs.get_score())
             loss, acc = self.metircs.get_score()
             self.metircs.get_final(epoch, mode)
-            nni.report_intermediate_result(acc)
+            # nni.report_intermediate_result(acc)
             if self.metircs.best_iter == epoch:
                 torch.save({'epoch': epoch,
                             'model_state_dict': self.model.state_dict(),
@@ -117,24 +117,17 @@ class Template:
 
 
     def main(self):
-        processed_list, alphabet = pkl.load(open(self.config['res_path'].format(self.config['dataset']), 'rb'))
-        if isinstance(processed_list, dict):
-            processed_list = [processed_list]
         scores = []
-        for data_list in processed_list:
-            train_data = MyDatasetLoader(self.config, data_list, 'train').get_data()
-            valid_data = MyDatasetLoader(self.config, data_list, 'valid').get_data()
-            test_data = MyDatasetLoader(self.config, data_list, 'test').get_data()
+        train_data, valid_data, test_data, word_dict = MyDatasetLoader(self.config).get_data()
+        self.config.word_dict = word_dict
 
-            self.model = TextCNN(self.config, alphabet).to(self.device)
-            for w in self.model.parameters():
-                print(w.shape, w.requires_grad)
-            self.optimizer = Adam(filter(lambda x: x.requires_grad, self.model.parameters()), lr=self.config['lr'], weight_decay=float(self.config['l2']), eps=float(self.config['esp']))
-            self.metircs = Metric()
-            for name, im in self.model.named_parameters():
-                print(im.shape, name, im.requires_grad)
-            score = self.forward(train_data, valid_data, test_data)
-            scores.append(score)
+        self.model = TextCNN(self.config).to(self.device)
+        for w in self.model.parameters():
+            print(w.shape, w.requires_grad)
+        self.optimizer = Adam(filter(lambda x: x.requires_grad, self.model.parameters()), lr=self.config['lr'], weight_decay=float(self.config['l2']), eps=float(self.config['esp']))
+        self.metircs = Metric()
+        score = self.forward(train_data, valid_data, test_data)
+        scores.append(score)
         print('| valid best | global best|')
         print('|    ---     |     ---    |')
         for w in scores:

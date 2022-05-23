@@ -1,5 +1,7 @@
-tqdm==4.54.1
-numpy==1.19.4
-torch==1.5.0
-PyYAML==5.3.1
-scikit_learn==0.24.0
+torch==1.7.1
+attrdict==2.0.1
+nni==2.0
+tqdm==4.56.0
+numpy==1.19.5
+PyYAML==6.0
+scikit_learn==1.1.1

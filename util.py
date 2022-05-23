@@ -9,10 +9,12 @@
 """
 
 from torch.utils.data import Dataset
+import os
 import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 import numpy as np
+import pickle as pkl
 
 
 class MyDataset(Dataset):
@@ -31,9 +33,9 @@ class MyDataset(Dataset):
 
 
 class MyDatasetLoader:
-    def __init__(self, args, dataset, mode='train'):
+    def __init__(self, args):
         self.args = args
-        self.data = dataset[mode]
+        self.processed_list, self.word_dict = pkl.load(open(os.path.join(args.res_path, 'data.pkl'), 'rb'))
 
     def collate_fn(self, batch_data):
         input_ids = [w['input_ids'] for w in batch_data]
@@ -48,7 +50,12 @@ class MyDatasetLoader:
         return res
 
     def get_data(self):
-        return DataLoader(MyDataset(self.data), shuffle=False, batch_size=self.args['batch_size'], collate_fn=self.collate_fn)
+        res = []
+        for line in self.processed_list:
+            r = DataLoader(MyDataset(line), shuffle=False, batch_size=self.args['batch_size'], collate_fn=self.collate_fn)
+            res.append(r)
+        res.append(self.word_dict)
+        return res
 
 
 class Metric:
